@@ -21,55 +21,55 @@ namespace Web.Models.Controller
         {
             _configuration = configuration;
             connect = _configuration.GetConnectionString("DefaultConnection") ?? "";
-
+            createTable();
         }
-        [HttpGet]
-        public IActionResult GetHuman()
-        {
-            //return Ok();
-            //string connect = _configuration.GetConnectionString("DefaultConnection");
-            try
-            {
-                using (SqlConnection connection = new SqlConnection(connect))
-                {
-                    connection.Open();
-                    string query = @"SELECT * FROM Human";
-                    using (SqlDataAdapter adapter = new SqlDataAdapter(query, connect))
-                    {
-                        DataTable dataTable = new DataTable();
-                        adapter.Fill(dataTable);
-                        // tuần tự hóa, chuyển từ dataTable về JSON
-                        var result= dataTable.AsEnumerable()
-                            .Select(row=>dataTable.Columns.Cast<DataColumn>()
-                            .ToDictionary(col=>col.ColumnName, col => row[col]));
-                        return Ok(result);
-                    }
+        //[HttpGet]
+        //public IActionResult GetHuman()
+        //{
+        //    //return Ok();
+        //    //string connect = _configuration.GetConnectionString("DefaultConnection");
+        //    try
+        //    {
+        //        using (SqlConnection connection = new SqlConnection(connect))
+        //        {
+        //            connection.Open();
+        //            string query = @"SELECT * FROM Human";
+        //            using (SqlDataAdapter adapter = new SqlDataAdapter(query, connect))
+        //            {
+        //                DataTable dataTable = new DataTable();
+        //                adapter.Fill(dataTable);
+        //                // tuần tự hóa, chuyển từ dataTable về JSON
+        //                var result= dataTable.AsEnumerable()
+        //                    .Select(row=>dataTable.Columns.Cast<DataColumn>()
+        //                    .ToDictionary(col=>col.ColumnName, col => row[col]));
+        //                return Ok(result);
+        //            }
 
-                }
+        //        }
 
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"{ex.Message}");
-            }
-        }
-        [HttpPost]
-        public IActionResult Add(Human human)
-        {
-            try
-            {   
-                createTable();
-                InsertHman(human.Cccd, human.Name, human.Birthday);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Lỗi hệ thống: {ex.Message}");
-            }
-            return Ok(new
-            {
-                Success = true,
-            });
-        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, $"{ex.Message}");
+        //    }
+        //}
+        //[HttpPost]
+        //public IActionResult Add(Human human)
+        //{
+        //    try
+        //    {   
+        //        createTable();
+        //        InsertHman(human.Cccd, human.Name, human.Birthday);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, $"Lỗi hệ thống: {ex.Message}");
+        //    }
+        //    return Ok(new
+        //    {
+        //        Success = true,
+        //    });
+        //}
 
         public static void createTable()
         {
@@ -126,6 +126,32 @@ IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Human
                 {
                     transaction.Rollback(); // Rollback nếu có lỗi
                     throw;
+                }
+            }
+        }
+        public static void DeleteHuman()
+        {
+            using (SqlConnection connection = new SqlConnection(connect))
+            {
+                connection.Open();
+                string query = "DELETE FROM Human ";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    //command.Parameters.AddWithValue("@CCCD",cccd);
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+        public static void DeleteCCCD(string cccd)
+        {
+            using (SqlConnection connection = new SqlConnection(connect))
+            {
+                connection.Open();
+                string query = "DELETE FROM Human WHERE CCCD=@CCCD";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@CCCD", cccd);
+                    command.ExecuteNonQuery();
                 }
             }
         }

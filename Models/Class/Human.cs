@@ -2,7 +2,7 @@
 
 namespace Web.Models.Class
 {
-    public /*abstract*/ class Human// Tạo đối tượng
+    public abstract class Human// Tạo đối tượng
     {
         private string? _name, _birthday, _cccd;
         public string? Name { get => string.IsNullOrEmpty(_name) ? "" : _name; set => _name = value; }

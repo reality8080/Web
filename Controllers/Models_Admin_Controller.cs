@@ -17,6 +17,9 @@ namespace Web.Models.Controller
         {
             _configuration = configuration;
             connect = _configuration.GetConnectionString("DefaultConnection") ?? "";
+            Models_Human.Connect = connect;
+            Models_Human.createTable();
+            createTable();
         }
         [HttpGet]
         public IActionResult GET()
@@ -82,14 +85,12 @@ namespace Web.Models.Controller
                 }
             }
         }
-    
+
         [HttpPost]
         public IActionResult Add(Admin admin)
         {
             try
             {
-                
-                createTable();
                 Insert(admin.Cccd, admin.Name, admin.Birthday, admin.ADmin, admin.Password, Admin.TypeOfAccount);
             }
             catch (Exception ex)
@@ -99,12 +100,52 @@ namespace Web.Models.Controller
             return Ok(new { Success = true, });
         }
 
+        [HttpPut]
+        public IActionResult Put([FromBody] Admin admin)
+        {
+            try
+            {
+                Insert(admin.Cccd, admin.Name, admin.Birthday, admin.ADmin, admin.Password, Admin.TypeOfAccount);
+                return Ok(new { message = "Data inserted/update successfully" });
+            }
+            catch (Exception ex) {
+                return BadRequest(new { message = ex.Message });
+            }
+
+        }
+
+        [HttpDelete]
+        public IActionResult Delete()
+        {
+            try
+            {
+                DeleteHuman();
+                return Ok(new { message = "All data deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+        [HttpDelete("{cccd}")]
+        public IActionResult Delete(string cccd)
+        {
+            try
+            {
+                DeleteCCCD(cccd);
+                return Ok(new { message = "All data deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         private void createTable()
         {
             using (SqlConnection connection = new SqlConnection(connect))
             {
-                Models_Human.Connect = connect;
-                Models_Human.createTable();
+
                 connection.Open();
                 string query = @"
                     IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Admin')
@@ -116,16 +157,16 @@ namespace Web.Models.Controller
                             typeOfAcc bit,
                             FOREIGN KEY (CCCD) REFERENCES Human(CCCD) ON DELETE CASCADE
                         )
-                    END";
+                    END";//ON DELETE CASCADE
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     command.ExecuteNonQuery();
                 }
             }
         }
-        private void Insert(string? cccd, string? name,string? birth, string? adminName,  string? pass, Boolean typeOfAcc)
+        private void Insert(string? cccd, string? name, string? birth, string? adminName, string? pass, Boolean typeOfAcc)
         {
-            Models_Human.InsertHman(cccd,name,birth);
+            Models_Human.InsertHman(cccd, name, birth);
             using (SqlConnection connection = new SqlConnection(connect))
             {
                 connection.Open();
@@ -146,7 +187,7 @@ namespace Web.Models.Controller
                             INSERT (CCCD,adminName, pass, typeOfAcc)
                             VALUES (source.CCCD, source.adminName, source.pass, source.typeOfAcc)
                         ;";
-                        using(SqlCommand command = new SqlCommand(query,connection, transaction))
+                        using (SqlCommand command = new SqlCommand(query, connection, transaction))
                         {
                             command.Parameters.AddWithValue("@CCCD", cccd);
                             //command.Parameters.AddWithValue("@name", name);
@@ -163,6 +204,37 @@ namespace Web.Models.Controller
                         transaction.Rollback();
                         throw;
                     }
+                }
+            }
+
+        }
+        private void DeleteHuman()
+        {
+            using(SqlConnection connection = new SqlConnection(connect))
+            {
+                Models_Human.Connect = connect;
+                Models_Human.DeleteHuman();
+                connection.Open();
+                string query = "DELETE FROM Admin ";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    //command.Parameters.AddWithValue("@CCCD",cccd);
+                    command.ExecuteNonQuery ();
+                }
+            }
+        }
+        private void DeleteCCCD(string cccd)
+        {
+            using (SqlConnection connection = new SqlConnection(connect))
+            {
+                Models_Human.Connect = connect;
+                Models_Human.DeleteCCCD(cccd);
+                connection.Open();
+                string query = "DELETE FROM Admin WHERE CCCD=@CCCD";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@CCCD",cccd);
+                    command.ExecuteNonQuery();
                 }
             }
         }
