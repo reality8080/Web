@@ -11,26 +11,27 @@ namespace Web.Controller
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class Models_Admin_Controller : ControllerBase
+    public class Admin_Controller : ControllerBase
     {
         private readonly IConfiguration _configuration;
         static string? connect;
 
-        public Models_Admin_Controller(IConfiguration configuration)
+        public Admin_Controller(IConfiguration configuration)
         {
             _configuration = configuration;
             connect = _configuration.GetConnectionString("DefaultConnection") ?? "";
-            Models_Human.Connect = connect;
-            Models_Human.createTable();
-            createTable();
+            Human_Controller.Connect = connect;
+            //Models_Human.createTable();
+            Task.Run(async () => await Human_Controller.createTable()).Wait();
+            Task.Run(async () => await createTable()).Wait();
         }
 
         [HttpGet]
-        public IActionResult GET()
+        public async Task<IActionResult> GET()
         {
             try
             {
-                var result=Display("Name","ASC");
+                var result= await Display("Name","ASC");
                 return Ok(new { result,Success=true,});
             }
             catch (Exception ex)
@@ -40,11 +41,11 @@ namespace Web.Controller
         }
 
         [HttpGet("SortColumn/{Column}")]
-        public IActionResult GET(string Column, string  Sort="ASC")
+        public async Task<IActionResult> GET(string Column, string  Sort="ASC")
         {
             try
             {
-                var result = Display(Column, Sort);
+                var result = await Display(Column, Sort);
                 return Ok(new { result, Success = true, });
             }
             catch (Exception ex)
@@ -54,11 +55,11 @@ namespace Web.Controller
         }
 
         [HttpGet("Take/{adminName}")]
-        public IActionResult GetHumanWithAdmin(string adminName)
+        public async Task<IActionResult> GetHumanWithAdmin(string adminName)
         {
             try
             {
-                var result = Search(adminName);
+                var result = await Search(adminName);
                 return Ok(new { result,Success=true});
             }
             catch (Exception ex)
@@ -68,11 +69,11 @@ namespace Web.Controller
         }
 
         [HttpPost]
-        public IActionResult Add(Admin admin)
+        public async Task<IActionResult>Add(Admin admin)
         {
             try
             {
-                InsertPost(admin.Cccd, admin.Name, admin.Birthday, admin.ADmin, admin.Password, Admin.TypeOfAccount);
+                await InsertPost(admin.Cccd, admin.Name, admin.Birthday, admin.ADmin, admin.Password, Admin.TypeOfAccount);
             }
             catch (Exception ex)
             {
@@ -84,11 +85,11 @@ namespace Web.Controller
         }
 
         [HttpPut]
-        public IActionResult Put([FromBody] Admin admin)
+        public async Task<IActionResult>Put([FromBody] Admin admin)
         {
             try
             {
-                InsertPut(admin.Cccd, admin.Name, admin.Birthday, admin.ADmin, admin.Password, Admin.TypeOfAccount);
+                await InsertPut(admin.Cccd, admin.Name, admin.Birthday, admin.ADmin, admin.Password, Admin.TypeOfAccount);
                 //return Ok(new { message = "Data inserted/update successfully" });
             }
             catch (Exception ex) {
@@ -100,11 +101,11 @@ namespace Web.Controller
         }
 
         [HttpDelete]
-        public IActionResult Delete()
+        public async Task<IActionResult>Delete()
         {
             try
             {
-                DeleteHuman();
+                await DeleteHuman();
                 //return Ok(new { message = "All data deleted successfully" });
             }
             catch (Exception ex)
@@ -116,11 +117,11 @@ namespace Web.Controller
             //return Ok(new { Success = true, });
         }
         [HttpDelete("Delete/{adminName}")]
-        public IActionResult Delete(string adminName)
+        public async Task<IActionResult>Delete(string adminName)
         {
             try
             {
-                DeleteAdmin(adminName);
+                await DeleteAdmin(adminName);
                 //return Ok(new { message = "All data deleted successfully" });
             }
             catch (Exception ex)
@@ -132,12 +133,12 @@ namespace Web.Controller
             //return Ok(new { Success = true, });
         }
 
-        private void createTable()
+        private static async Task createTable()
         {
             using (SqlConnection connection = new SqlConnection(connect))
             {
 
-                connection.Open();
+                await connection.OpenAsync();
                 string query = @"
                     IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Admin')
                     BEGIN
@@ -155,9 +156,9 @@ namespace Web.Controller
                 }
             }
         }
-        private void InsertPost(string? cccd, string? name, string? birth, string? adminName, string? pass, Boolean typeOfAcc)
+        private static async Task InsertPost(string? cccd, string? name, string? birth, string? adminName, string? pass, Boolean typeOfAcc)
         {
-            Models_Human.InsertHman(cccd, name, birth);
+            await Human_Controller.InsertHuman(cccd, name, birth);
             using (SqlConnection connection = new SqlConnection(connect))
             {
                 connection.Open();
@@ -207,9 +208,9 @@ namespace Web.Controller
             }
         }
 
-        private void InsertPut(string? cccd, string? name, string? birth, string? adminName, string? pass, Boolean typeOfAcc)
+        private static async Task InsertPut(string? cccd, string? name, string? birth, string? adminName, string? pass, Boolean typeOfAcc)
         {
-            Models_Human.InsertHman(cccd, name, birth);
+            await Human_Controller.InsertHuman(cccd, name, birth);
             using (SqlConnection connection = new SqlConnection(connect))
             {
                 connection.Open();
@@ -253,12 +254,12 @@ namespace Web.Controller
                 }
             }
         }
-        private void DeleteHuman()
+        private static async Task DeleteHuman()
         {
             using(SqlConnection connection = new SqlConnection(connect))
             {
-                Models_Human.Connect = connect;
-                Models_Human.DeleteHuman();
+                Human_Controller.Connect = connect;
+                await Human_Controller.DeleteHuman();
                 connection.Open();
                 string query = "DELETE FROM Admin ";
                 using (SqlCommand command = new SqlCommand(query, connection))
@@ -268,18 +269,18 @@ namespace Web.Controller
                 }
             }
         }
-        private void DeleteAdmin(string adminName)
+        private static async Task DeleteAdmin(string adminName)
         {
             using (SqlConnection connection = new SqlConnection(connect))
             {
-                Models_Human.Connect = connect;
+                Human_Controller.Connect = connect;
                 string humanquery = "SELECT CCCD FROM Admin Where adminName=@adminName";           
                 connection.Open();
                 using (SqlCommand command = new SqlCommand(humanquery, connection))
                 {
                     command.Parameters.AddWithValue("@adminName", adminName);
                     var cccd=command.ExecuteScalar();
-                    Models_Human.DeleteCCCD(cccd.ToString());
+                    await Human_Controller.DeleteCCCD(cccd.ToString());
                 }
                 //Models_Human.DeleteCCCD(cccd);
                 string query = "DELETE FROM Admin WHERE adminName=@adminName";
@@ -290,7 +291,7 @@ namespace Web.Controller
                 }
             }
         }
-        private EnumerableRowCollection<Dictionary<string,object>> Display(string columnName, string sortOrder)
+        private static async Task<EnumerableRowCollection<Dictionary<string,object>>> Display(string columnName, string sortOrder)
         {
 
             var validColumns = new HashSet<string> { "CCCD", "Name", "Birth", "adminName", "typeOfAcc" };
@@ -303,7 +304,7 @@ namespace Web.Controller
 
             using (SqlConnection connection = new SqlConnection(connect))
             {
-                connection.Open();
+                await connection.OpenAsync();
                 string query = $@"SELECT h.CCCD,h.Name, h.Birth, A.adminName, A.typeOfAcc
                     FROM Admin a
                     LEFT JOIN Human h ON h.CCCD=A.CCCD
@@ -322,13 +323,13 @@ namespace Web.Controller
                 }
             }
         }
-        private EnumerableRowCollection<Dictionary<string, object>> Search(string adminName)
+        private static async Task<EnumerableRowCollection<Dictionary<string, object>>> Search(string adminName)
         {
             DataTable dataTable = new DataTable();
 
             using (SqlConnection connection = new SqlConnection(connect))
             {
-                connection.Open();
+                await connection.OpenAsync();
 
                 string query = @"
      SELECT h.CCCD,h.Name, h.Birth, A.adminName, A.typeOfAcc

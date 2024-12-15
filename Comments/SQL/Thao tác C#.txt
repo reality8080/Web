@@ -1,0 +1,10 @@
+﻿SQL
+1. Kết nối Sql
+        private static string? connect;
+        --> Kết nối với Sql
+        _configuration = configuration;
+        connect = _configuration.GetConnectionString("DefaultConnection") ?? "";
+        --> Lấy dữ liệu từ appsettings.json
+         "ConnectionStrings": {
+            "DefaultConnection": ""
+          },

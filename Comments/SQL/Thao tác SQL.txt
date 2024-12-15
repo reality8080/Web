@@ -1,0 +1,74 @@
+﻿SQL
+A. Thao tác trên Sql bằng ADO.net
+1. Tạo bảng
+a. Lệnh tạo bảng
+    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Human')
+    BEGIN
+        CREATE TABLE HUMAN(
+            <Tên column> <Kiểu dữ liệu>
+        )
+    END
+    - Chú thích:
+        INFORMATION_SCHEMA.TABLES: Bảng hệ thống chứa các bảng bao gồm bảng hệ thống và bảng thường
+
+    - Các bước thao tác
+    B1: Kiểm tra bảng sự tồn tại của bảng
+    B2: Nếu không tồn tại
+        - Tạo bảng với các dữ liệu đã chọn, cũng như các khóa,...
+    B3: Nếu tồn tại
+        - Bỏ qua
+    - Những thứ có thể thêm vào trong bảng
+     Các ràng buộc (Constraints):
+
+        PRIMARY KEY: ID INT PRIMARY KEY,
+            Ràng buộc giúp kiểm soát tính toàn vẹn và hợp lệ của dữ liệu trong bảng.
+            Định danh duy nhất cho mỗi hàng.
+
+        FOREIGN KEY: FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
+            Đảm bảo mối quan hệ giữa các bảng.
+            Phải là PRIMARY hoặc UNIQUE
+
+        UNIQUE: Email NVARCHAR(100) UNIQUE
+            Đảm bảo giá trị trong một cột hoặc nhóm cột là duy nhất.
+            Có thể dùng tương tự như PRIMARY
+
+        CHECK: Salary DECIMAL(10, 2) CHECK (Salary > 0)
+            Ràng buộc giá trị trong một phạm vi hoặc điều kiện.
+
+        DEFAULT: Country NVARCHAR(50) DEFAULT 'Vietnam'
+            Cung cấp giá trị mặc định nếu không nhập dữ liệu
+    Chỉ mục (Indexes)
+        Chỉ mục giúp tăng tốc độ truy vấn. Bạn có thể thêm chỉ mục ngay khi tạo bảng.
+    Trigger (Kích hoạt)
+        Tự động thực hiện một hành động khi có sự kiện như INSERT, UPDATE, hoặc DELETE xảy ra trên bảng.
+        Mặc dù trigger không được thêm trực tiếp trong lệnh CREATE TABLE, nhưng nó có thể được liên kết với bảng sau đó.
+            CREATE TRIGGER trg_AfterInsert
+            ON Employees
+            AFTER INSERT
+            AS
+            BEGIN
+                PRINT 'Record added to Employees table'
+            END;
+    Quan hệ với các bảng khác (Relationships)
+        Thiết lập mối quan hệ giữa các bảng thông qua FOREIGN KEY.
+        Kèm theo các hành động khi dữ liệu bị thay đổi (ON DELETE CASCADE, ON UPDATE CASCADE).
+            CREATE TABLE Orders (
+                OrderID INT PRIMARY KEY,
+                CustomerID INT,
+                FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
+                ON DELETE CASCADE
+                ON UPDATE CASCADE
+            );
+     Phân quyền (Permissions)
+        Bạn có thể gán quyền truy cập cho người dùng trên bảng sau khi tạo.
+    
+b. Thêm bản ghi
+    i. Thêm bảng ghi có thể update
+    MERGE INTO Human AS target
+    USING(VALUES (@CCCD,@Name,@Birth)) AS Source (CCCD,Name,Birth)
+    ON target.CCCD = source.CCCD
+    WHEN MATCHED THEN
+        UPDATE SET CCCD=source.CCCD, Name = source.Name, Birth = source.Birth
+    WHEN NOT MATCHED THEN
+        INSERT (CCCD, Name, Birth) 
+        VALUES (source.CCCD, source.Name, source.Birth);

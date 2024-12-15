@@ -1,0 +1,8 @@
+﻿Install-Package <package-name>
+package-name:
+	Microsoft.EntityFrameworkCore
+	Microsoft.EntityFrameworkCore.SqlServer
+	Microsoft.EntityFrameworkCore.Tools
+
+	Database Updates ("Migrations"):  Microsoft.EntityFrameworkCore.Design
+	[ADO.net thì ko cần]

@@ -10,18 +10,18 @@ namespace Web.Controller
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class Models_Human : ControllerBase// Tạo phương thức thếm sửa xóa của đối tượng
+    public class Human_Controller : ControllerBase// Tạo phương thức thếm sửa xóa của đối tượng
     {
         private readonly IConfiguration _configuration;
         private static string? connect;
 
         public static string? Connect { get => connect; set => connect = value; }
 
-        public Models_Human(IConfiguration configuration)
+        public Human_Controller(IConfiguration configuration)
         {
             _configuration = configuration;
             connect = _configuration.GetConnectionString("DefaultConnection") ?? "";
-            createTable();
+            Task.Run(async ()=> await createTable()).Wait();
         }
         //[HttpGet]
         //public IActionResult GetHuman()
@@ -71,12 +71,12 @@ namespace Web.Controller
         //    });
         //}
 
-        public static void createTable()
+        public static async Task createTable()
         {
 
             using (SqlConnection connection = new SqlConnection(connect))
             {
-                connection.Open();
+                await connection.OpenAsync();
                 string query = @"
                 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Human')
                 BEGIN
@@ -95,11 +95,11 @@ namespace Web.Controller
 
 
         }
-        public static void InsertHman(string? cccd, string? name, string? birthday)
+        public static async Task InsertHuman(string? cccd, string? name, string? birthday)
         {
             using (SqlConnection connection = new SqlConnection(connect))
             {
-                connection.Open();
+                await connection.OpenAsync();
                 SqlTransaction transaction = connection.BeginTransaction();
                 try
                 {
@@ -129,11 +129,11 @@ namespace Web.Controller
                 }
             }
         }
-        public static void DeleteHuman()
+        public static async Task DeleteHuman()
         {
             using (SqlConnection connection = new SqlConnection(connect))
             {
-                connection.Open();
+                await connection.OpenAsync();
                 string query = "DELETE FROM Human ";
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
@@ -142,11 +142,11 @@ namespace Web.Controller
                 }
             }
         }
-        public static void DeleteCCCD(string? cccd)
+        public static async Task DeleteCCCD(string? cccd)
         {
             using (SqlConnection connection = new SqlConnection(connect))
             {
-                connection.Open();
+                await connection.OpenAsync();
                 string query = "DELETE FROM Human WHERE CCCD=@CCCD";
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
