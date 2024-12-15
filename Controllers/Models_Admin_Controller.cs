@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Newtonsoft.Json;
 using System.Data;
 using Web.Models.Class;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
-namespace Web.Models.Controller
+namespace Web.Controller
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -13,6 +15,7 @@ namespace Web.Models.Controller
     {
         private readonly IConfiguration _configuration;
         static string? connect;
+
         public Models_Admin_Controller(IConfiguration configuration)
         {
             _configuration = configuration;
@@ -21,31 +24,14 @@ namespace Web.Models.Controller
             Models_Human.createTable();
             createTable();
         }
+
         [HttpGet]
         public IActionResult GET()
         {
             try
             {
-                using (SqlConnection connection = new SqlConnection(connect))
-                {
-                    connection.Open();
-                    string query = @"SELECT h.CCCD,h.Name, h.Birth, A.adminName, A.typeOfAcc
-                    FROM Human h
-                    LEFT JOIN Admin a ON h.CCCD=A.CCCD
-                    ";
-                    using (SqlCommand command = new SqlCommand(query, connection))
-                    {
-                        using (SqlDataAdapter adapter = new SqlDataAdapter(command))
-                        {
-                            DataTable dataTable = new DataTable();
-                            adapter.Fill(dataTable);
-                            var result = dataTable.AsEnumerable()
-                                .Select(row => dataTable.Columns.Cast<DataColumn>()
-                                .ToDictionary(col => col.ColumnName, col => row[col]));
-                            return Ok(result);
-                        }
-                    }
-                }
+                var result=Display("Name","ASC");
+                return Ok(new { result,Success=true,});
             }
             catch (Exception ex)
             {
@@ -53,36 +39,31 @@ namespace Web.Models.Controller
             }
         }
 
-        [HttpGet("{id}")]
-        public IActionResult GetHumanWithAdmin(string id)
+        [HttpGet("SortColumn/{Column}")]
+        public IActionResult GET(string Column, string  Sort="ASC")
         {
-            DataTable dataTable = new DataTable();
-
-            using (SqlConnection connection = new SqlConnection(connect))
+            try
             {
-                connection.Open();
+                var result = Display(Column, Sort);
+                return Ok(new { result, Success = true, });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"{ex.Message}");
+            }
+        }
 
-                string query = @"
-                SELECT h.CCCD,h.Name, h.Birth, A.adminName, A.typeOfAcc
-                FROM Human h
-                LEFT JOIN Admin A ON h.CCCD = A.CCCD
-                WHERE h.CCCD = @CCCD";
-
-                using (SqlCommand command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@CCCD", id);
-
-                    using (SqlDataAdapter adapter = new SqlDataAdapter(command))
-                    {
-                        adapter.Fill(dataTable);
-                        var result = dataTable.AsEnumerable()
-                            .Select(row => dataTable.Columns.Cast<DataColumn>()
-                                .ToDictionary(col => col.ColumnName, col => row[col]));
-
-                        return Ok(result);
-
-                    }
-                }
+        [HttpGet("Take/{adminName}")]
+        public IActionResult GetHumanWithAdmin(string adminName)
+        {
+            try
+            {
+                var result = Search(adminName);
+                return Ok(new { result,Success=true});
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"{ex.Message}");
             }
         }
 
@@ -91,13 +72,15 @@ namespace Web.Models.Controller
         {
             try
             {
-                Insert(admin.Cccd, admin.Name, admin.Birthday, admin.ADmin, admin.Password, Admin.TypeOfAccount);
+                InsertPost(admin.Cccd, admin.Name, admin.Birthday, admin.ADmin, admin.Password, Admin.TypeOfAccount);
             }
             catch (Exception ex)
             {
                 return StatusCode(500, $"Lỗi hệ thống: {ex.Message}");
             }
-            return Ok(new { Success = true, });
+            var result = Display("Name", "ASC");
+            return Ok(new { result, Success = true, });
+            //return Ok(new { Success = true, });
         }
 
         [HttpPut]
@@ -105,12 +88,14 @@ namespace Web.Models.Controller
         {
             try
             {
-                Insert(admin.Cccd, admin.Name, admin.Birthday, admin.ADmin, admin.Password, Admin.TypeOfAccount);
-                return Ok(new { message = "Data inserted/update successfully" });
+                InsertPut(admin.Cccd, admin.Name, admin.Birthday, admin.ADmin, admin.Password, Admin.TypeOfAccount);
+                //return Ok(new { message = "Data inserted/update successfully" });
             }
             catch (Exception ex) {
                 return BadRequest(new { message = ex.Message });
             }
+            var result = Display("Name", "ASC");
+            return Ok(new { result, Success = true, message = "Data inserted/update successfully" });
 
         }
 
@@ -120,25 +105,31 @@ namespace Web.Models.Controller
             try
             {
                 DeleteHuman();
-                return Ok(new { message = "All data deleted successfully" });
+                //return Ok(new { message = "All data deleted successfully" });
             }
             catch (Exception ex)
             {
                 return BadRequest(new { message = ex.Message });
             }
+            var result = Display("Name", "ASC");
+            return Ok(new { result, Success = true, message = "All data deleted successfully" });
+            //return Ok(new { Success = true, });
         }
-        [HttpDelete("{cccd}")]
-        public IActionResult Delete(string cccd)
+        [HttpDelete("Delete/{adminName}")]
+        public IActionResult Delete(string adminName)
         {
             try
             {
-                DeleteCCCD(cccd);
-                return Ok(new { message = "All data deleted successfully" });
+                DeleteAdmin(adminName);
+                //return Ok(new { message = "All data deleted successfully" });
             }
             catch (Exception ex)
             {
                 return BadRequest(new { message = ex.Message });
             }
+            var result = Display("Name", "ASC");
+            return Ok(new { result, Success = true, message = "All data deleted successfully" });
+            //return Ok(new { Success = true, });
         }
 
         private void createTable()
@@ -164,7 +155,7 @@ namespace Web.Models.Controller
                 }
             }
         }
-        private void Insert(string? cccd, string? name, string? birth, string? adminName, string? pass, Boolean typeOfAcc)
+        private void InsertPost(string? cccd, string? name, string? birth, string? adminName, string? pass, Boolean typeOfAcc)
         {
             Models_Human.InsertHman(cccd, name, birth);
             using (SqlConnection connection = new SqlConnection(connect))
@@ -174,19 +165,27 @@ namespace Web.Models.Controller
                 {
                     try
                     {
+                        //string query = @"
+                        //MERGE INTO Admin AS target
+                        //USING (VALUES(@CCCD,@adminName,@pass,@typeOfAcc)) AS Source(CCCD, adminName, pass, typeOfAcc)
+                        //ON target.CCCD=source.CCCD
+                        //WHEN MATCHED THEN
+                        //    UPDATE SET CCCD=source.CCCD,
+                        //    adminName=source.adminName, 
+                        //    pass=source.pass, 
+                        //    typeOfAcc=source.typeOfAcc
+                        //WHEN NOT MATCHED THEN
+                        //    INSERT (CCCD,adminName, pass, typeOfAcc)
+                        //    VALUES (source.CCCD, source.adminName, source.pass, source.typeOfAcc)
+                        //;";
                         string query = @"
-                        MERGE INTO Admin AS target
-                        USING (VALUES(@CCCD,@adminName,@pass,@typeOfAcc)) AS Source(CCCD, adminName, pass, typeOfAcc)
-                        ON target.CCCD=source.CCCD
-                        WHEN MATCHED THEN
-                            UPDATE SET CCCD=source.CCCD,
-                            adminName=source.adminName, 
-                            pass=source.pass, 
-                            typeOfAcc=source.typeOfAcc
-                        WHEN NOT MATCHED THEN
-                            INSERT (CCCD,adminName, pass, typeOfAcc)
-                            VALUES (source.CCCD, source.adminName, source.pass, source.typeOfAcc)
-                        ;";
+                                IF NOT EXISTS (SELECT * FROM Admin WHERE CCCD = @CCCD)
+                                BEGIN
+                                    INSERT INTO Admin (CCCD, adminName, pass, typeOfAcc)
+                                    VALUES (@CCCD, @adminName, @pass, @typeOfAcc);
+                                END
+                                ";
+                        // Chỉ kiểm tra sự tồn tại của CCCD, tác dụng chính là tránh lỗi PRIMARY KEY
                         using (SqlCommand command = new SqlCommand(query, connection, transaction))
                         {
                             command.Parameters.AddWithValue("@CCCD", cccd);
@@ -206,7 +205,53 @@ namespace Web.Models.Controller
                     }
                 }
             }
+        }
 
+        private void InsertPut(string? cccd, string? name, string? birth, string? adminName, string? pass, Boolean typeOfAcc)
+        {
+            Models_Human.InsertHman(cccd, name, birth);
+            using (SqlConnection connection = new SqlConnection(connect))
+            {
+                connection.Open();
+                using (SqlTransaction transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        string query = @"
+                            MERGE INTO Admin AS target
+                            USING (VALUES (@CCCD, @adminName, @pass, @typeOfAcc)) AS Source(CCCD, adminName, pass, typeOfAcc)
+                            ON target.CCCD = Source.CCCD
+                            WHEN MATCHED AND (target.adminName <> Source.adminName OR target.pass <> Source.pass OR target.typeOfAcc <> Source.typeOfAcc) THEN
+                                UPDATE SET 
+                                    adminName = Source.adminName, 
+                                    pass = Source.pass, 
+                                    typeOfAcc = Source.typeOfAcc
+                            WHEN NOT MATCHED THEN
+                                INSERT (CCCD, adminName, pass, typeOfAcc)
+                                VALUES (Source.CCCD, Source.adminName, Source.pass, Source.typeOfAcc);
+";
+                        // Kiểm tra sự giống nhau của bản ghi cũ và mới
+                        // Nếu giống thì bỏ qua
+                        // Nếu không giống hoàn toàn thì cập nhật.
+                        using (SqlCommand command = new SqlCommand(query, connection, transaction))
+                        {
+                            command.Parameters.AddWithValue("@CCCD", cccd);
+                            //command.Parameters.AddWithValue("@name", name);
+                            //command.Parameters.AddWithValue("");
+                            command.Parameters.AddWithValue("@adminName", adminName);
+                            command.Parameters.AddWithValue("@pass", pass);
+                            command.Parameters.AddWithValue("@typeOfAcc", typeOfAcc);
+                            command.ExecuteNonQuery();
+                        }
+                        transaction.Commit();
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
         }
         private void DeleteHuman()
         {
@@ -223,20 +268,111 @@ namespace Web.Models.Controller
                 }
             }
         }
-        private void DeleteCCCD(string cccd)
+        private void DeleteAdmin(string adminName)
         {
             using (SqlConnection connection = new SqlConnection(connect))
             {
                 Models_Human.Connect = connect;
-                Models_Human.DeleteCCCD(cccd);
+                string humanquery = "SELECT CCCD FROM Admin Where adminName=@adminName";           
                 connection.Open();
-                string query = "DELETE FROM Admin WHERE CCCD=@CCCD";
+                using (SqlCommand command = new SqlCommand(humanquery, connection))
+                {
+                    command.Parameters.AddWithValue("@adminName", adminName);
+                    var cccd=command.ExecuteScalar();
+                    Models_Human.DeleteCCCD(cccd.ToString());
+                }
+                //Models_Human.DeleteCCCD(cccd);
+                string query = "DELETE FROM Admin WHERE adminName=@adminName";
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
-                    command.Parameters.AddWithValue("@CCCD",cccd);
+                    command.Parameters.AddWithValue("@adminName", adminName);
                     command.ExecuteNonQuery();
+                }
+            }
+        }
+        private EnumerableRowCollection<Dictionary<string,object>> Display(string columnName, string sortOrder)
+        {
+
+            var validColumns = new HashSet<string> { "CCCD", "Name", "Birth", "adminName", "typeOfAcc" };
+            if (!validColumns.Contains(columnName))
+                throw new ArgumentException($"Invalid column name: {columnName}");
+            if (!string.Equals(sortOrder, "ASC", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(sortOrder, "DESC", StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException($"Invalid sort order: {sortOrder}");
+
+
+            using (SqlConnection connection = new SqlConnection(connect))
+            {
+                connection.Open();
+                string query = $@"SELECT h.CCCD,h.Name, h.Birth, A.adminName, A.typeOfAcc
+                    FROM Admin a
+                    LEFT JOIN Human h ON h.CCCD=A.CCCD
+                    ORDER BY {columnName} {sortOrder}";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    using (SqlDataAdapter adapter = new SqlDataAdapter(command))
+                    {
+                        DataTable dataTable = new DataTable();
+                        adapter.Fill(dataTable);
+                        var result = dataTable.AsEnumerable()
+                            .Select(row => dataTable.Columns.Cast<DataColumn>()
+                            .ToDictionary(col => col.ColumnName, col => row[col]));
+                        return result;
+                    }
+                }
+            }
+        }
+        private EnumerableRowCollection<Dictionary<string, object>> Search(string adminName)
+        {
+            DataTable dataTable = new DataTable();
+
+            using (SqlConnection connection = new SqlConnection(connect))
+            {
+                connection.Open();
+
+                string query = @"
+     SELECT h.CCCD,h.Name, h.Birth, A.adminName, A.typeOfAcc
+     FROM Human h
+     LEFT JOIN Admin A ON h.CCCD = A.CCCD
+     WHERE A.adminName = @adminName";
+
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@adminName", adminName);
+
+                    using (SqlDataAdapter adapter = new SqlDataAdapter(command))
+                    {
+                        adapter.Fill(dataTable);
+                        var result = dataTable.AsEnumerable()
+                            .Select(row => dataTable.Columns.Cast<DataColumn>()
+                                .ToDictionary(col => col.ColumnName, col => row[col]));
+
+                        return result;
+
+                    }
                 }
             }
         }
     }
 }
+//using (SqlConnection connection = new SqlConnection(connect))
+//{
+//    connection.Open();
+//    string query = $@"SELECT h.CCCD,h.Name, h.Birth, A.adminName, A.typeOfAcc
+//                    FROM Human h
+//                    LEFT JOIN Admin a ON h.CCCD=A.CCCD
+//                    ORDER BY {columnName} {sortOrder}
+//                    ";
+//    using (SqlCommand command = new SqlCommand(query, connection))
+//    {
+//        using (SqlDataAdapter adapter = new SqlDataAdapter(command))
+//        {
+//            DataTable dataTable = new DataTable();
+//            adapter.Fill(dataTable);
+//            var result = dataTable.AsEnumerable()
+//                .Select(row => dataTable.Columns.Cast<DataColumn>()
+//                .ToDictionary(col => col.ColumnName, col => row[col]));
+//            return Ok(result);
+//        }
+//    }
+//}

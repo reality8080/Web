@@ -6,7 +6,7 @@ using System.Data;
 using Web.Models.Class;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace Web.Models.Controller
+namespace Web.Controller
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -142,7 +142,7 @@ IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Human
                 }
             }
         }
-        public static void DeleteCCCD(string cccd)
+        public static void DeleteCCCD(string? cccd)
         {
             using (SqlConnection connection = new SqlConnection(connect))
             {
@@ -151,7 +151,12 @@ IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Human
                 using (SqlCommand command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@CCCD", cccd);
-                    command.ExecuteNonQuery();
+                    if (cccd != null)
+                    {
+                        command.ExecuteNonQuery();
+                        return;
+                    }
+                    throw new Exception("Không tìm thấy người dùng với tên: " + cccd);
                 }
             }
         }
