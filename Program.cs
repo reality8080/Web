@@ -1,4 +1,7 @@
 ﻿
+using Microsoft.EntityFrameworkCore;
+using Web.Data;
+
 namespace Web
 {
     public class Program
@@ -19,6 +22,11 @@ namespace Web
             .AllowAnyOrigin()
             .AllowAnyHeader()
             .AllowAnyMethod()));
+
+            builder.Services.AddDbContext<DbContextRoom>(option => 
+            {
+                option.UseSqlServer(builder.Configuration.GetConnectionString("Connecting"));
+            });
 
             var app = builder.Build();
 
