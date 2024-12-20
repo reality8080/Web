@@ -1,4 +1,8 @@
 ﻿
+using Microsoft.EntityFrameworkCore;
+using Web.Data;
+using Web.Repository;
+
 namespace Web
 {
     public class Program
@@ -19,6 +23,15 @@ namespace Web
             .AllowAnyOrigin()
             .AllowAnyHeader()
             .AllowAnyMethod()));
+
+            builder.Services.AddDbContext<DbContextRoom>(option => 
+            {
+                option.UseSqlServer(builder.Configuration.GetConnectionString("Connecting"));
+            });
+
+            builder.Services.AddAutoMapper(typeof(Program));
+
+            builder.Services.AddScoped<IRoomRepository,RoomRepository>();
 
             var app = builder.Build();
 
