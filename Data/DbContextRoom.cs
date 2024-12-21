@@ -4,7 +4,7 @@ namespace Web.Data
 {
     public class DbContextRoom : DbContext
     {
-        public DbContextRoom(DbContextOptions<DbContextRoom> opt) : base(opt)
+        public DbContextRoom(DbContextOptions<DbContextRoom> opt):base(opt)
         {
         }
 

@@ -28,6 +28,7 @@ namespace Web.Controllers
         {
             _context = context;
         }
+
         // GET: api/Rooms
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Model_Room>>> GetRooms()
@@ -36,7 +37,7 @@ namespace Web.Controllers
             {
                 return Ok(await _context!.Display());
 
-            }
+        }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
@@ -57,7 +58,7 @@ namespace Web.Controllers
 
                 return BadRequest(ex.Message);
 
-            }
+        }
         }
 
         // PUT: api/Rooms/5
@@ -77,11 +78,13 @@ namespace Web.Controllers
                 //await _context.SaveChangesAsync();
                 await _context.Edit(id, room);
                 return Ok(new { Results = await _context.Display() });
-            }
+                }
             catch (Exception ex)
-            {
+                {
                 return BadRequest(ex.Message);
             }
+
+            return NoContent();
         }
 
         // POST: api/Rooms
@@ -93,10 +96,10 @@ namespace Web.Controllers
             //await _context.SaveChangesAsync();
 
             //return CreatedAtAction("GetRoom", new { id = room.Id }, room);
-            
+
             return Ok(new { result = await _context.InsertRoom(room) });
         }
-        
+
 
         // DELETE: api/Rooms/5
         [HttpDelete("{id}")]
@@ -116,9 +119,9 @@ namespace Web.Controllers
             {
                 await _context.Delete(id);
                 return Ok(await _context!.Display());
-            }
+        }
             catch
-            {
+        {
                 return BadRequest();
             }
         }
