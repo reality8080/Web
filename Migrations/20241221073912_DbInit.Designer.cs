@@ -12,7 +12,7 @@ using Web.Data;
 namespace Web.Migrations
 {
     [DbContext(typeof(DbContextRoom))]
-    [Migration("20241220072643_DbInit")]
+    [Migration("20241221073912_DbInit")]
     partial class DbInit
     {
         /// <inheritdoc />
@@ -50,9 +50,6 @@ namespace Web.Migrations
 
                     b.Property<DateTime?>("Time")
                         .HasColumnType("datetime2");
-
-                    b.Property<Guid>("Url")
-                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 

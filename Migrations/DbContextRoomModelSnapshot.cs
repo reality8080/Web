@@ -48,9 +48,6 @@ namespace Web.Migrations
                     b.Property<DateTime?>("Time")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("Url")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
                     b.ToTable("Room");

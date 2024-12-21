@@ -12,8 +12,6 @@ namespace Web.Data
         [MaxLength(100)]
         private String? nameHost;
         [MaxLength(100)]
-        private Guid _url;
-        [MaxLength(100)]
         private String? pass;
         [MaxLength(20)]
         private String? status;// Broadcast, unicast, unique
@@ -25,7 +23,6 @@ namespace Web.Data
 
         public int Id { get => id; set => id = value; }
         public string? NameHost { get => nameHost; set => nameHost = value; }
-        public Guid Url { get => _url; set => _url = value; }
         public string? Pass { get => pass; set => pass = value; }
         public string? Status { get => status; set => status = value; }
         public string? Description { get => description; set => description = value; }

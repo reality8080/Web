@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 using Web.Data;
@@ -31,15 +32,10 @@ namespace Web.Repository
                 await _context.SaveChangesAsync();
             }
         }
-        public async Task<List<Model_Room>> Display()
+        public async Task<IEnumerable<Model_Room>> Display()
         {
             var rooms = await _context.Rooms!.ToListAsync();
-            return _map.Map<List<Model_Room>>(rooms);
-        }
-        public async Task<Model_Room> Search(Guid url)
-        {
-            var room = await _context.Rooms!.FirstOrDefaultAsync(r=>r.Url==url);
-            return _map.Map<Model_Room>(room);
+            return _map.Map<IEnumerable<Model_Room>>(rooms);
         }
 
         public async Task<Model_Room> Search(int id)
@@ -56,9 +52,9 @@ namespace Web.Repository
             return newRoom.Id;
         }
 
-        public async Task Delete(Guid url)
+        public async Task Delete(int Id)
         {
-            var deleteRoom = _context.Rooms!.SingleOrDefault(b => b.Url == url);
+            var deleteRoom = _context.Rooms!.SingleOrDefault(b => b.Id == Id);
             if (deleteRoom != null)
             {
                 _context.Rooms!.Remove(deleteRoom);

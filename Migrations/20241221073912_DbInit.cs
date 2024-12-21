@@ -18,7 +18,6 @@ namespace Web.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     NameHost = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Url = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Pass = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
