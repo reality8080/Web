@@ -12,7 +12,7 @@ using Web.Data;
 namespace Web.Migrations
 {
     [DbContext(typeof(DbContextRoom))]
-    [Migration("20241221073912_DbInit")]
+    [Migration("20241221114524_DbInit")]
     partial class DbInit
     {
         /// <inheritdoc />
